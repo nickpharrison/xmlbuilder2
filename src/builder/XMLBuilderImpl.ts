@@ -128,6 +128,101 @@ export class XMLBuilderImpl implements XMLBuilder {
   }
 
   /** @inheritdoc */
+  removeNonLeafTextNodes(): XMLBuilder {
+    const children = this.toArray()
+    if (children.length === 1 && children[0].node.nodeType === children[0].node.TEXT_NODE) {
+      return this
+    }
+    for (const child of children) {
+      if (child.node.nodeType === child.node.TEXT_NODE) {
+        child.remove()
+      } else if (child.node.nodeType === child.node.ELEMENT_NODE) {
+        child.removeNonLeafTextNodes()
+      }
+    }
+    return this
+  }
+
+  /** @inheritdoc */
+  isChildOf(parent: XMLBuilder): boolean {
+    const root = this.root();
+    let next: XMLBuilder = this;
+    while (next.node !== root.node) {
+      if (next.node === parent.node) {
+        return true;
+      }
+      next = next.up();
+    }
+    return false;
+  }
+
+  /** @inheritdoc */
+  nextOrUpNext(): XMLBuilder {
+    if (this.node === this.up().last().node) {
+      return this.up().nextOrUpNext();
+    }
+    return this.next();
+  }
+
+  /** @inheritdoc */
+  removeUntil(target: XMLBuilder, removeFirst: boolean, removeLast: boolean): void {
+    if (this.node === target.node) {
+      if (removeLast) {
+        this.remove();
+      }
+      return;
+    }
+    if (target.isChildOf(this)) {
+      this.first().removeUntil(target, true, removeLast);
+    } else {
+      const next = this.nextOrUpNext();
+      if (removeFirst) {
+        this.remove();
+      }
+      next.removeUntil(target, true, removeLast);
+    }
+  }
+
+  /** @inheritdoc */
+  get(nodeName: string): XMLBuilder|void {
+    for (const child of this.toArray()) {
+      if (child.node.nodeName === nodeName) {
+        return child;
+      }
+    }
+  }
+
+  /** @inheritdoc */
+  getAll(nodeName: string): XMLBuilder[] {
+    return this.toArray().filter(child => child.node.nodeName === nodeName)
+  }
+
+  /** @inheritdoc */
+  getCommonAncestorWith(other: XMLBuilder): XMLBuilder {
+    if (other.isChildOf(this)) {
+      return this;
+    }
+    while (true) {
+      if (this.isChildOf(other)) {
+        return other;
+      }
+      other = other.up();
+    }
+  }
+
+  /** @inheritdoc */
+  duplicate(): XMLBuilder {
+    const copiedNode = this.node.cloneNode(true);
+    const up = this.up();
+    if (up.last().node === this.node) {
+      up.node.appendChild(copiedNode);
+    } else {
+      up.node.insertBefore(copiedNode, this.next().node);
+    }
+    return this.next();
+  }
+
+  /** @inheritdoc */
   att(p1: AttributesObject | string | null, p2?: string, p3?: string): XMLBuilder {
 
     if (isMap(p1) || isObject(p1)) {

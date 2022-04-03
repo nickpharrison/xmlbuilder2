@@ -700,6 +700,62 @@ export interface XMLBuilder {
   remove(): XMLBuilder
 
   /**
+   * Removes all text child nodes recursively that are not leaves of branches
+   * 
+   * @returns self
+   */
+   removeNonLeafTextNodes(): XMLBuilder
+
+  /**
+   * Determines whether the node is a child node of the supplied parameter
+   * 
+   * @returns if the node is a child node of the parameter node
+   */
+   isChildOf(parent: XMLBuilder): boolean
+
+  /**
+   * Returns the next node unless it does not have one, in which case it returns the next node of the closest ancestor which has a next node
+   * 
+   * @returns the next node
+   */
+   nextOrUpNext(): XMLBuilder
+
+  /**
+   * Returns the next node unless it does not have one, in which case it returns the next node of the closest ancestor which has a next node
+   * 
+   * @returns the next node
+   */
+   removeUntil(target: XMLBuilder, removeFirst: boolean, removeLast: boolean): void
+
+  /**
+   * Get the first child node with the given node name
+   * 
+   * @returns the first node with the given nodeName
+   */
+   get(nodeName: string): XMLBuilder|void
+
+  /**
+   * Get all child nodes with the given node name
+   * 
+   * @returns the nodes with the given nodeName
+   */
+   getAll(nodeName: string): XMLBuilder[]
+
+  /**
+   * Get the common ancestor between two nodes
+   * 
+   * @returns the common ancestor
+   */
+   getCommonAncestorWith(other: XMLBuilder): XMLBuilder
+
+  /**
+   * Deep clone the current node and append it after this node
+   * 
+   * @returns the cloned node
+   */
+   duplicate(): XMLBuilder
+
+  /**
    * Creates or updates an element attribute.
    * 
    * @param namespace - namespace of the attribute

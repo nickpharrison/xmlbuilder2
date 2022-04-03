@@ -20,11 +20,11 @@ export class XMLReader extends BaseReader<string> {
    * @param str - XML document string to parse
    */
   _parse(node: XMLBuilder, str: string): XMLBuilder {
-    const lexer = new XMLStringLexer(str, { skipWhitespaceOnlyText: true })
+    const lexer = new XMLStringLexer(str, { skipWhitespaceOnlyText: false })
 
     let lastChild = node
     let context = node
-
+    let firstElementIncluded = false;
     let token = lexer.nextToken()
     while (token.type !== TokenType.EOF) {
       switch (token.type) {
@@ -50,8 +50,10 @@ export class XMLReader extends BaseReader<string> {
           context = this.docType(context, this.sanitize(doctype.name), this.sanitize(doctype.pubId), this.sanitize(doctype.sysId)) || context
           break
         case TokenType.CDATA:
-          const cdata = <CDATAToken>token
-          context = this.cdata(context, this.sanitize(cdata.data)) || context
+          if (firstElementIncluded) {
+            const cdata = <CDATAToken>token
+            context = this.cdata(context, this.sanitize(cdata.data)) || context
+          }
           break
         case TokenType.Comment:
           const comment = <CommentToken>token
@@ -62,10 +64,13 @@ export class XMLReader extends BaseReader<string> {
           context = this.instruction(context, this.sanitize(pi.target), this.sanitize(pi.data)) || context
           break
         case TokenType.Text:
-          const text = <TextToken>token
-          context = this.text(context, this._decodeText(this.sanitize(text.data))) || context
+          if (firstElementIncluded) {
+            const text = <TextToken>token
+            context = this.text(context, this._decodeText(this.sanitize(text.data))) || context
+          }
           break
         case TokenType.Element:
+          firstElementIncluded = true;
           const element = <ElementToken>token
           const elementName = this.sanitize(element.name)
 
